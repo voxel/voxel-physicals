@@ -1,7 +1,8 @@
 module.exports = physical
 
 var aabb = require('aabb-3d')
-  , THREE = require('three')
+  , glm = require('gl-matrix')
+  , vec3 = glm.vec3
 
 function physical(avatar, collidables, dimensions, terminal) {
   return new Physical(avatar, collidables, dimensions, terminal)
@@ -9,7 +10,18 @@ function physical(avatar, collidables, dimensions, terminal) {
 
 function Physical(avatar, collidables, dimensions, terminal) {
   this.avatar = avatar
-  this.terminal = terminal || new THREE.Vector3(0.9, 0.1, 0.9)
+
+  if (terminal) {
+    if ('x' in terminal) {
+      // three.js Vector3 format
+      this.terminal = vec3.fromValues(terminal.x, terminal.y, terminal.z)
+    } else {
+      this.terminal = terminal
+    }
+  } else {
+    this.terminal = vec3.fromValues(0.9, 0.1, 0.9)
+  }
+
   this.dimensions = dimensions = dimensions || [1, 1, 1]
   this._aabb = aabb([0, 0, 0], dimensions)
   this.resting = {x: false, y: false, z: false}
@@ -17,7 +29,7 @@ function Physical(avatar, collidables, dimensions, terminal) {
   this.last_rest_y = NaN
 
   this.collidables = collidables
-  this.friction = new THREE.Vector3(1, 1, 1)
+  this.friction = vec3.fromValues(1, 1, 1)
 
   this.rotation = this.avatar.rotation
   this.default_friction = 1
@@ -27,10 +39,10 @@ function Physical(avatar, collidables, dimensions, terminal) {
   this.pitch =
   this.roll = avatar
 
-  this.forces = new THREE.Vector3(0, 0, 0)
+  this.forces = vec3.create()
   this.attractors = []
-  this.acceleration = new THREE.Vector3(0, 0, 0)
-  this.velocity = new THREE.Vector3(0, 0, 0)
+  this.acceleration = vec3.create()
+  this.velocity = vec3.create()
 }
 
 var cons = Physical
@@ -40,13 +52,13 @@ var cons = Physical
 
 // make these *once*, so we're not generating
 // garbage for every object in the game.
-var WORLD_DESIRED = new THREE.Vector3(0, 0, 0)
-  , DESIRED = new THREE.Vector3(0, 0, 0)
-  , START = new THREE.Vector3(0, 0, 0)
-  , END = new THREE.Vector3(0, 0, 0)
-  , DIRECTION = new THREE.Vector3()
-  , LOCAL_ATTRACTOR = new THREE.Vector3()
-  , TOTAL_FORCES = new THREE.Vector3()
+var WORLD_DESIRED = vec3.create()
+  , DESIRED = vec3.create()
+  , START = vec3.create()
+  , END = vec3.create()
+  , DIRECTION = vec3.create()
+  , LOCAL_ATTRACTOR = vec3.create()
+  , TOTAL_FORCES = vec3.create()
 
 proto.applyWorldAcceleration = applyTo('acceleration')
 proto.applyWorldVelocity = applyTo('velocity')
@@ -60,6 +72,15 @@ function applyTo(which) {
   }
 }
 
+var _POSITION = vec3.create()
+// get avatar position in as gl-matrix vec3
+proto.avatarPosition = function() {
+  _POSITION[0] = this.avatar.position.x
+  _POSITION[1] = this.avatar.position.y
+  _POSITION[2] = this.avatar.position.z
+  return _POSITION
+}
+
 proto.tick = function(dt) {
   var forces = this.forces
     , acceleration = this.acceleration
@@ -70,89 +91,86 @@ proto.tick = function(dt) {
     , world_desired = WORLD_DESIRED
     , bbox
     , pcs
-  TOTAL_FORCES.multiplyScalar(0)
-
-  desired.x =
-  desired.y =
-  desired.z =
-  world_desired.x =
-  world_desired.y =
-  world_desired.z = 0
+  vec3.set(TOTAL_FORCES, 0, 0, 0)
+  vec3.set(desired, 0, 0, 0)
+  vec3.set(world_desired, 0, 0, 0)
 
   for(var i = 0; i < this.attractors.length; i++) {
-    var distance_factor = this.avatar.position.distanceToSquared(this.attractors[i])
-    LOCAL_ATTRACTOR.copy(this.attractors[i])
-    LOCAL_ATTRACTOR = this.avatar.worldToLocal(LOCAL_ATTRACTOR)
+    var distance_factor = vec3.squaredDistance(this.avatarPosition(), this.attractors[i])
 
-    DIRECTION.sub(LOCAL_ATTRACTOR, this.avatar.position)
+    vec3.copy(LOCAL_ATTRACTOR, this.attractors[i])
+    //LOCAL_ATTRACTOR = this.avatar.worldToLocal(LOCAL_ATTRACTOR)
+    var tmp = this.avatar.worldToLocal(LOCAL_ATTRACTOR)
+    vec3.set(LOCAL_ATTRACTOR, tmp.x, tmp.y, tmp.z)
 
-    DIRECTION.divideScalar(DIRECTION.length() * distance_factor)
-    DIRECTION.multiplyScalar(this.attractors[i].mass)
+    vec3.sub(DIRECTION, LOCAL_ATTRACTOR, this.avatarPosition())
 
-    TOTAL_FORCES.addSelf(DIRECTION)
+    vec3.scale(DIRECTION, this.attractors[i].mass / (DIRECTION.length() * distance_factor))
+
+    vec3.add(TOTAL_FORCES, TOTAL_FORCES, DIRECTION)
   }
   
   if(!this.resting.x) {
-    acceleration.x /= 8 * dt
-    acceleration.x += TOTAL_FORCES.x * dt
-    acceleration.x += forces.x * dt
+    acceleration[0] /= 8 * dt
+    acceleration[0] += TOTAL_FORCES[0] * dt
+    acceleration[0] += forces[0] * dt
 
-    velocity.x += acceleration.x * dt
-    velocity.x *= friction.x
+    velocity[0] += acceleration[0] * dt
+    velocity[0] *= friction[0]
 
-    if(abs(velocity.x) < terminal.x) {
-      desired.x = (velocity.x * dt)
-    } else if(velocity.x !== 0) {
-      desired.x = (velocity.x / abs(velocity.x)) * terminal.x
+    if(abs(velocity[0]) < terminal[0]) {
+      desired[0] = (velocity[0] * dt)
+    } else if(velocity[0] !== 0) {
+      desired[0] = (velocity[0] / abs(velocity[0])) * terminal[0]
     }
   } else {
-    acceleration.x = velocity.x = 0
+    acceleration[0] = velocity[0] = 0
   }
   if(!this.resting.y) {
-    acceleration.y /= 8 * dt
-    acceleration.y += TOTAL_FORCES.y * dt
-    acceleration.y += forces.y * dt
+    acceleration[1] /= 8 * dt
+    acceleration[1] += TOTAL_FORCES[1] * dt
+    acceleration[1] += forces[1] * dt
 
-    velocity.y += acceleration.y * dt
-    velocity.y *= friction.y
+    velocity[1] += acceleration[1] * dt
+    velocity[1] *= friction[1]
 
-    if(abs(velocity.y) < terminal.y) {
-      desired.y = (velocity.y * dt)
-    } else if(velocity.y !== 0) {
-      desired.y = (velocity.y / abs(velocity.y)) * terminal.y
+    if(abs(velocity[1]) < terminal[1]) {
+      desired[1] = (velocity[1] * dt)
+    } else if(velocity[1] !== 0) {
+      desired[1] = (velocity[1] / abs(velocity[1])) * terminal[1]
     }
   } else {
-    acceleration.y = velocity.y = 0
+    acceleration[1] = velocity[1] = 0
   }
   if(!this.resting.z) {
-    acceleration.z /= 8 * dt
-    acceleration.z += TOTAL_FORCES.z * dt
-    acceleration.z += forces.z * dt
+    acceleration[2] /= 8 * dt
+    acceleration[2] += TOTAL_FORCES[2] * dt
+    acceleration[2] += forces[2] * dt
 
-    velocity.z += acceleration.z * dt
-    velocity.z *= friction.z
+    velocity[2] += acceleration[2] * dt
+    velocity[2] *= friction[2]
 
-    if(abs(velocity.z) < terminal.z) {
-      desired.z = (velocity.z * dt)
-    } else if(velocity.z !== 0) {
-      desired.z = (velocity.z / abs(velocity.z)) * terminal.z
+    if(abs(velocity[2]) < terminal[2]) {
+      desired[2] = (velocity[2] * dt)
+    } else if(velocity[2] !== 0) {
+      desired[2] = (velocity[2] / abs(velocity[2])) * terminal[2]
     }
   } else {
-    acceleration.z = velocity.z = 0
+    acceleration[2] = velocity[2] = 0
   }
 
-  START.copy(this.avatar.position)
-  this.avatar.translateX(desired.x)
-  this.avatar.translateY(desired.y)
-  this.avatar.translateZ(desired.z)
-  END.copy(this.avatar.position)
-  this.avatar.position.copy(START)
-  world_desired.x = END.x - START.x
-  world_desired.y = END.y - START.y
-  world_desired.z = END.z - START.z
-  this.friction.x =
-  this.friction.y =
-  this.friction.z = this.default_friction
+  vec3.copy(START, this.avatarPosition())
+  this.avatar.translateX(desired[0])
+  this.avatar.translateY(desired[1])
+  this.avatar.translateZ(desired[2])
+  vec3.copy(END, this.avatarPosition())
+  this.avatar.position.x = START[0]
+  this.avatar.position.y = START[1]
+  this.avatar.position.z = START[2]
+  vec3.sub(world_desired, END, START)
+  this.friction[0] =
+  this.friction[1] =
+  this.friction[2] = this.default_friction
 
   // save old copies, since when normally on the
   // ground, this.resting.y alternates (false,-1)
@@ -184,26 +202,27 @@ proto.tick = function(dt) {
   }
 
   // apply translation
-  this.avatar.position.x += world_desired.x
-  this.avatar.position.y += world_desired.y
-  this.avatar.position.z += world_desired.z
+  this.avatar.position.x += world_desired[0]
+  this.avatar.position.y += world_desired[1]
+  this.avatar.position.z += world_desired[2]
 }
 
 proto.subjectTo = function(force) {
-  this.forces.x += force[0]
-  this.forces.y += force[1]
-  this.forces.z += force[2]
+  vec3.add(this.forces, this.forces, force)
   return this
 }
 
 proto.removeForce = function(force) {
-  this.forces.x -= force[0]
-  this.forces.y -= force[1]
-  this.forces.z -= force[2]
+  vec3.sub(this.forces, this.forces, force)
   return this
 }
 
 proto.attractTo = function(vector, mass) {
+  if ('x' in mass) {
+    // if needed, convert from three.js Vector to gl-matrix vec3
+    mass = vec3.fromValues(mass.x, mass.y, mass.z)
+  }
+
   vector.mass = mass
   this.attractors.push(vector)
 }

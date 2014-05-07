@@ -18,7 +18,7 @@
   "license": "MIT",
   "gitHead": "1b2a372bce5fb9fd460e231c0cea8fcc5d6e2352",
   "dependencies": {
-    "three": "0.X.X",
-    "aabb-3d": "0.0.X"
+    "aabb-3d": "0.0.X",
+    "gl-matrix": "^2.2.1"
   }
 }
