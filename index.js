@@ -231,7 +231,7 @@ proto.aabb = function() {
   var pos = this.avatar.position
   var d = this.dimensions
   return aabb(
-    [-pos.x + (d[0]/2), -pos.y - (d[1]*2), -pos.z + (d[2]/2)],
+    [pos.x - (d[0]/2), pos.y, pos.z - (d[2]/2)],
     this.dimensions
   )
 }
