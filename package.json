@@ -1,22 +1,22 @@
 {
-  "name": "voxel-physical",
+  "name": "voxel-physicals",
   "version": "0.1.3",
   "description": "create objects that have aabbs and respond to accel and vel updates",
-  "main": "index.js",
+  "main": "physicals.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/chrisdickinson/voxel-physical.git"
+    "url": "git://github.com/deathcap/voxel-physicals.git"
   },
   "keywords": [
     "voxeljs",
     "physics"
   ],
   "author": "Chris Dickinson <chris@neversaw.us>",
+  "contributors": ["deathcap <deathcap@gmx.co.uk>"],
   "license": "MIT",
-  "gitHead": "1b2a372bce5fb9fd460e231c0cea8fcc5d6e2352",
   "dependencies": {
     "aabb-3d": "0.0.X",
     "gl-matrix": "^2.2.1"

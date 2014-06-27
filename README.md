@@ -1,6 +1,9 @@
-# voxel-physical
+# voxel-physicals
 
-create voxel-js objects that are affected by physics!
+Create voxel-js objects that are affected by physics!
+Based on chrisdickinson's [voxel-physical](https://github.com/chrisdickinson/voxel-physical)
+except replaces the [three.js](http://threejs.org/) dependency with [gl-matrix](http://glmatrix.net/),
+for use with [voxel-engine#ndarray](https://github.com/maxogden/voxel-engine/pull/103).
 
 ```javascript
 // typical usage:
@@ -12,7 +15,7 @@ game.addItem(physics)
 game.scene.add(object)
 
 // direct usage:
-var physical = require('voxel-physical')
+var physical = require('voxel-physicals')
 
 var physics = physical(
     object
