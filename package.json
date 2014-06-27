@@ -1,6 +1,6 @@
 {
   "name": "voxel-physicals",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "create objects that have aabbs and respond to accel and vel updates",
   "main": "physicals.js",
   "scripts": {
@@ -15,7 +15,9 @@
     "physics"
   ],
   "author": "Chris Dickinson <chris@neversaw.us>",
-  "contributors": ["deathcap <deathcap@gmx.co.uk>"],
+  "contributors": [
+    "deathcap <deathcap@gmx.co.uk>"
+  ],
   "license": "MIT",
   "dependencies": {
     "aabb-3d": "0.0.X",
