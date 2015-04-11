@@ -3,7 +3,7 @@
 Create voxel-js objects that are affected by physics!
 Based on chrisdickinson's [voxel-physical](https://github.com/chrisdickinson/voxel-physical)
 except replaces the [three.js](http://threejs.org/) dependency with [gl-matrix](http://glmatrix.net/),
-for use with [voxel-engine#ndarray](https://github.com/maxogden/voxel-engine/pull/103).
+for use with [voxel-engine-stackgl](https://github.com/deathcap/voxel-engine-stackgl).
 
 ```javascript
 // typical usage:
