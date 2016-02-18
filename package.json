@@ -20,7 +20,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "aabb-3d": "0.0.X",
+    "aabb-3d": "0.1.0",
     "gl-matrix": "^2.2.1"
   }
 }
